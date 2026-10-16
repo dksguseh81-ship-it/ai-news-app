@@ -4,7 +4,13 @@ import { UserButton } from "@clerk/nextjs";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { articles, categories } from "@/db/schema";
-import { CategoryBar } from "@/components/category-bar";
+import {
+  CategoryBar,
+  FilterProvider,
+  PendingList,
+  type CategoryItem,
+} from "@/components/dashboard-filter";
+import { EmptyState } from "@/components/empty-state";
 import { NewsCard, NewsCardSkeleton } from "@/components/news-card";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
@@ -84,48 +90,59 @@ async function DashboardContent({
 
   const categoryNames = new Map(userCategories.map((c) => [c.id, c.name]));
 
-  return (
-    <>
-      <CategoryBar
-        categories={userCategories}
-        counts={counts}
-        total={total}
-        selectedId={selectedId}
-      />
+  const items: CategoryItem[] = [
+    { id: null, name: "전체", count: total },
+    ...userCategories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      count: counts.get(c.id) ?? 0,
+    })),
+  ];
 
-      {list.length === 0 ? (
-        <p className="py-16 text-center text-slate-500 dark:text-slate-400">
-          {selectedId === null
-            ? "아직 가져온 뉴스가 없어요"
-            : "이 카테고리에는 기사가 없어요"}
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((article) => (
-            <NewsCard
-              key={article.id}
-              article={article}
-              categoryName={
-                (article.categoryId && categoryNames.get(article.categoryId)) ||
-                "기타"
-              }
-            />
-          ))}
-        </div>
-      )}
-    </>
+  return (
+    <FilterProvider selectedId={selectedId}>
+      <CategoryBar items={items} />
+
+      <PendingList>
+        {list.length === 0 ? (
+          <EmptyState filtered={selectedId !== null} />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {list.map((article) => (
+              <NewsCard
+                key={article.id}
+                article={article}
+                categoryName={
+                  (article.categoryId &&
+                    categoryNames.get(article.categoryId)) ||
+                  "기타"
+                }
+              />
+            ))}
+          </div>
+        )}
+      </PendingList>
+    </FilterProvider>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <>
-      <div className="h-9 w-2/3 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+    <div role="status" aria-busy="true" aria-label="뉴스를 불러오는 중" className="space-y-6">
+      <div className="-mx-4 flex gap-2 overflow-hidden px-4 sm:mx-0 sm:px-0">
+        {[56, 88, 96, 104, 80].map((w, i) => (
+          <div
+            key={i}
+            style={{ width: w }}
+            className="h-11 shrink-0 animate-pulse rounded-full bg-slate-200 sm:h-9 dark:bg-slate-800"
+          />
+        ))}
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }, (_, i) => (
           <NewsCardSkeleton key={i} />
         ))}
       </div>
-    </>
+    </div>
   );
 }
