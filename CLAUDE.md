@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Only the bare `create-next-app` scaffold exists (Next.js 16, React 19, TypeScript, Tailwind CSS 4, App Router, `src/` layout, alias `@/*` → `src/*`). No app code has been written yet. [PRD.md](PRD.md) (Korean) is the source of truth for what to build; read it before implementing features.
+Only the bare `create-next-app` scaffold exists (Next.js 16, React 19, TypeScript, Tailwind CSS 4, App Router, `src/` layout, alias `@/*` → `src/*`). No app code has been written yet. [PRD.md](PRD.md) (Korean) is the source of truth for what to build; read it before implementing features. [ui.md](ui.md) (Korean) is the UI guide (Tailwind styling, dashboard layout, category bar, news card); read it before building or changing any UI.
 
 **Next.js 16 differs from older versions.** [AGENTS.md](AGENTS.md) requires reading the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code, and heeding deprecation notices.
 
