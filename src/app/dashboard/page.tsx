@@ -11,7 +11,11 @@ import {
   type CategoryItem,
 } from "@/components/dashboard-filter";
 import { EmptyState } from "@/components/empty-state";
+import { FetchNewsButton } from "@/components/fetch-news-button";
+import { Pagination } from "@/components/pagination";
 import { NewsCard, NewsCardSkeleton } from "@/components/news-card";
+
+const PAGE_SIZE = 9;
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -27,7 +31,10 @@ export default function DashboardPage({
           <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">
             AI 뉴스 수집기
           </h1>
-          <UserButton />
+          <div className="flex items-center gap-3">
+            <FetchNewsButton />
+            <UserButton />
+          </div>
         </div>
       </header>
 
@@ -76,6 +83,17 @@ async function DashboardContent({
       ? requestedId
       : null;
 
+  // ?page=<n> — 범위를 벗어나거나 숫자가 아니면 가장 가까운 유효 페이지로 맞춘다
+  const filteredTotal =
+    selectedId === null ? total : (counts.get(selectedId) ?? 0);
+  const totalPages = Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE));
+  const rawPage = Array.isArray(params.page) ? params.page[0] : params.page;
+  const requestedPage = Number.parseInt(rawPage ?? "1", 10);
+  const page = Math.min(
+    Math.max(Number.isNaN(requestedPage) ? 1 : requestedPage, 1),
+    totalPages,
+  );
+
   // 최신순: 발행일 내림차순(발행일 없는 기사는 뒤로), 같으면 수집 시각 내림차순
   const list = await db
     .select()
@@ -86,7 +104,13 @@ async function DashboardContent({
         selectedId !== null ? eq(articles.categoryId, selectedId) : undefined,
       ),
     )
-    .orderBy(sql`${articles.publishedAt} desc nulls last`, desc(articles.createdAt));
+    .orderBy(
+      sql`${articles.publishedAt} desc nulls last`,
+      desc(articles.createdAt),
+      desc(articles.id), // 정렬 값이 같아도 페이지 사이에 순서가 흔들리지 않게 한다
+    )
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
 
   const categoryNames = new Map(userCategories.map((c) => [c.id, c.name]));
 
@@ -107,18 +131,25 @@ async function DashboardContent({
         {list.length === 0 ? (
           <EmptyState filtered={selectedId !== null} />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((article) => (
-              <NewsCard
-                key={article.id}
-                article={article}
-                categoryName={
-                  (article.categoryId &&
-                    categoryNames.get(article.categoryId)) ||
-                  "기타"
-                }
-              />
-            ))}
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {list.map((article) => (
+                <NewsCard
+                  key={article.id}
+                  article={article}
+                  categoryName={
+                    (article.categoryId &&
+                      categoryNames.get(article.categoryId)) ||
+                    "기타"
+                  }
+                />
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              categoryId={selectedId}
+            />
           </div>
         )}
       </PendingList>

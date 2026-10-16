@@ -1,15 +1,11 @@
-import { UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { SignInGate } from "@/components/sign-in-gate";
 
-export default function Home() {
-  return (
-    <SignInGate>
-      <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-between border-b px-6 py-4">
-          <h1 className="text-lg font-semibold">AI 뉴스 수집기</h1>
-          <UserButton />
-        </header>
-      </div>
-    </SignInGate>
-  );
+export default async function Home() {
+  // 이미 로그인한 사용자는 바로 대시보드로 보낸다.
+  const { userId } = await auth();
+  if (userId) redirect("/dashboard");
+
+  return <SignInGate />;
 }
