@@ -6,12 +6,14 @@ import { fetchNews, type FetchNewsResult } from "@/app/dashboard/actions";
 type Message = { tone: "ok" | "warn" | "error"; text: string };
 
 function toMessage(r: FetchNewsResult): Message {
-  const failed = r.failedSources.length;
-  if (failed > 0) {
-    return {
-      tone: "warn",
-      text: `${r.added}건 추가, ${failed}개 소스 실패 (${r.failedSources.join(", ")})`,
-    };
+  const failedSources = r.failedSources.length;
+  if (failedSources > 0 || r.failed > 0) {
+    const parts = [`${r.added}건 추가`];
+    if (r.failed > 0) parts.push(`${r.failed}건 처리 실패`);
+    if (failedSources > 0) {
+      parts.push(`${failedSources}개 소스 실패 (${r.failedSources.join(", ")})`);
+    }
+    return { tone: "warn", text: parts.join(", ") };
   }
   return {
     tone: "ok",
