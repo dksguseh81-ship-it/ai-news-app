@@ -9,6 +9,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
+import { CategoryManager } from "./category-manager";
 
 export type CategoryItem = {
   // null = 전체
@@ -65,6 +66,9 @@ const chipIdle =
 const chipActive = "border-indigo-600 bg-indigo-600 text-white";
 
 export function CategoryBar({ items }: { items: CategoryItem[] }) {
+  const managed = items.filter(
+    (i): i is CategoryItem & { id: number } => i.id !== null,
+  );
   const { selectedId, select } = useFilter();
 
   return (
@@ -97,15 +101,7 @@ export function CategoryBar({ items }: { items: CategoryItem[] }) {
         );
       })}
 
-      {/* 카테고리 추가 기능은 아직 구현 전이라 비활성 상태로 표시한다. */}
-      <button
-        type="button"
-        disabled
-        title="준비 중"
-        className="inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-slate-300 px-3.5 text-sm font-medium text-slate-500 transition disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-9 dark:border-slate-600 dark:text-slate-400"
-      >
-        <span aria-hidden="true">+</span> 카테고리 추가
-      </button>
+      <CategoryManager categories={managed} />
     </div>
   );
 }

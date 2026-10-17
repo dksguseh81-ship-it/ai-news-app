@@ -15,6 +15,9 @@ import { FetchNewsButton } from "@/components/fetch-news-button";
 import { Pagination } from "@/components/pagination";
 import { NewsCard, NewsCardSkeleton } from "@/components/news-card";
 
+// 뉴스 가져오기(Server Action)가 Claude 호출로 오래 걸릴 수 있어 시간 제한을 늘린다.
+export const maxDuration = 60;
+
 const PAGE_SIZE = 9;
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
