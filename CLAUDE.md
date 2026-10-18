@@ -15,6 +15,10 @@ Only the bare `create-next-app` scaffold exists (Next.js 16, React 19, TypeScrip
 - `npm run lint` — ESLint (flat config, `eslint.config.mjs`)
 - No test runner is configured.
 
+## Custom slash commands
+
+- `/news-workflow <branch-name>` ([.claude/commands/news-workflow.md](.claude/commands/news-workflow.md)) — feature-development workflow: checks the current branch is `main` (warns and asks before switching), creates a lowercase-hyphen branch from the argument (asks what to build and suggests a name if omitted), re-states the stack/conventions from this file, then on the user typing `완료` or `done` shows changed files, proposes a commit message, commits after confirmation, merges into `main`, and summarizes the work.
+
 ## Planned architecture (from PRD.md, not yet installed)
 
 - **Auth:** Clerk; unauthenticated users are blocked. All data is scoped by Clerk user ID.
