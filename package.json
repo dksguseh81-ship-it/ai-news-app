@@ -16,7 +16,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
     "@clerk/nextjs": "^7.9.16",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@neondatabase/serverless": "^1.2.0",
+    "@notionhq/notion-mcp-server": "^2.5.2",
     "drizzle-orm": "^0.45.4",
     "fast-xml-parser": "^5.11.2",
     "next": "16.4.2",

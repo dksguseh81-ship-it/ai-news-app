@@ -1,4 +1,5 @@
 import type { Article } from "@/db/schema";
+import { SaveToNotionButton } from "@/components/save-to-notion-button";
 
 type NewsCardProps = {
   article: Article;
@@ -54,31 +55,11 @@ export function NewsCard({ article, categoryName }: NewsCardProps) {
         >
           원문 보기 ↗
         </a>
-        {article.notionSaved ? (
-          article.notionPageUrl ? (
-            <a
-              href={article.notionPageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-sm font-medium text-emerald-600 hover:underline sm:min-h-0 dark:text-emerald-400"
-            >
-              ✓ 저장됨
-            </a>
-          ) : (
-            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              ✓ 저장됨
-            </span>
-          )
-        ) : (
-          // Notion 저장 기능은 아직 구현 전이라 비활성 상태로 표시한다.
-          <button
-            type="button"
-            disabled
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm sm:min-h-9 font-medium text-slate-700 transition disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-          >
-            Notion 저장
-          </button>
-        )}
+        <SaveToNotionButton
+          articleId={article.id}
+          initialSaved={article.notionSaved}
+          initialPageUrl={article.notionPageUrl}
+        />
       </div>
     </article>
   );
