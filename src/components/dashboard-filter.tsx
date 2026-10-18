@@ -6,6 +6,7 @@ import {
   createContext,
   useContext,
   useOptimistic,
+  useState,
   useTransition,
   type ReactNode,
 } from "react";
@@ -20,9 +21,19 @@ export type CategoryItem = {
 
 type FilterState = {
   selectedId: number | null;
+  query: string;
   isPending: boolean;
   select: (id: number | null) => void;
+  search: (query: string) => void;
 };
+
+function dashboardHref(categoryId: number | null, query: string) {
+  const params = new URLSearchParams();
+  if (categoryId !== null) params.set("category", String(categoryId));
+  if (query) params.set("q", query);
+  const qs = params.toString();
+  return qs ? `/dashboard?${qs}` : "/dashboard";
+}
 
 const FilterContext = createContext<FilterState | null>(null);
 
@@ -36,24 +47,43 @@ function useFilter() {
 // 칩을 누르면 선택 표시를 즉시 바꾸고, 새 목록이 올 때까지 기존 목록을 흐리게 보여 준다.
 export function FilterProvider({
   selectedId,
+  query,
   children,
 }: {
   selectedId: number | null;
+  query: string;
   children: ReactNode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [optimisticId, setOptimisticId] = useOptimistic(selectedId);
+  const [optimisticQuery, setOptimisticQuery] = useOptimistic(query);
 
+  // 카테고리를 바꿔도 검색어는 유지하고, 둘 다 1페이지부터 다시 본다.
   const select = (id: number | null) => {
     startTransition(() => {
       setOptimisticId(id);
-      router.push(id === null ? "/dashboard" : `/dashboard?category=${id}`);
+      router.push(dashboardHref(id, optimisticQuery));
+    });
+  };
+
+  const search = (q: string) => {
+    startTransition(() => {
+      setOptimisticQuery(q);
+      router.push(dashboardHref(optimisticId, q));
     });
   };
 
   return (
-    <FilterContext value={{ selectedId: optimisticId, isPending, select }}>
+    <FilterContext
+      value={{
+        selectedId: optimisticId,
+        query: optimisticQuery,
+        isPending,
+        select,
+        search,
+      }}
+    >
       {children}
     </FilterContext>
   );
@@ -69,7 +99,7 @@ export function CategoryBar({ items }: { items: CategoryItem[] }) {
   const managed = items.filter(
     (i): i is CategoryItem & { id: number } => i.id !== null,
   );
-  const { selectedId, select } = useFilter();
+  const { selectedId, query, select } = useFilter();
 
   return (
     <div
@@ -80,8 +110,7 @@ export function CategoryBar({ items }: { items: CategoryItem[] }) {
     >
       {items.map((item) => {
         const active = selectedId === item.id;
-        const href =
-          item.id === null ? "/dashboard" : `/dashboard?category=${item.id}`;
+        const href = dashboardHref(item.id, query);
         return (
           <Link
             key={item.id ?? "all"}
@@ -103,6 +132,45 @@ export function CategoryBar({ items }: { items: CategoryItem[] }) {
 
       <CategoryManager categories={managed} />
     </div>
+  );
+}
+
+export function SearchBar() {
+  const { query, search } = useFilter();
+  // 뒤로 가기 등으로 검색어가 바뀌면 입력창도 맞춘다(렌더 중 상태 동기화).
+  const [value, setValue] = useState(query);
+  const [synced, setSynced] = useState(query);
+  if (synced !== query) {
+    setSynced(query);
+    setValue(query);
+  }
+
+  return (
+    <form
+      role="search"
+      onSubmit={(e) => {
+        e.preventDefault();
+        search(value.trim());
+      }}
+      className="ml-auto flex w-full gap-2 sm:w-1/3"
+    >
+      <input
+        type="search"
+        name="q"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="키워드로 뉴스 검색"
+        aria-label="뉴스 키워드 검색"
+        maxLength={100}
+        className="min-h-11 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:min-h-9 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+      />
+      <button
+        type="submit"
+        className="inline-flex min-h-11 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 sm:min-h-9 dark:bg-indigo-500"
+      >
+        검색
+      </button>
+    </form>
   );
 }
 

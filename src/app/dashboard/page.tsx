@@ -1,13 +1,14 @@
 import { Suspense } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { articles, categories } from "@/db/schema";
 import {
   CategoryBar,
   FilterProvider,
   PendingList,
+  SearchBar,
   type CategoryItem,
 } from "@/components/dashboard-filter";
 import { EmptyState } from "@/components/empty-state";
@@ -86,9 +87,31 @@ async function DashboardContent({
       ? requestedId
       : null;
 
+  // ?q=<키워드> — 한국어 제목·요약과 원문 제목에서 대소문자 구분 없이 찾는다
+  const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
+  const query = (rawQ ?? "").trim().slice(0, 100);
+  // LIKE 와일드카드(% _ \)는 글자 그대로 검색하도록 이스케이프한다
+  const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
+
+  const where = and(
+    eq(articles.userId, userId),
+    selectedId !== null ? eq(articles.categoryId, selectedId) : undefined,
+    query
+      ? or(
+          ilike(articles.titleKo, pattern),
+          ilike(articles.summaryKo, pattern),
+          ilike(articles.originalTitle, pattern),
+        )
+      : undefined,
+  );
+
   // ?page=<n> — 범위를 벗어나거나 숫자가 아니면 가장 가까운 유효 페이지로 맞춘다
-  const filteredTotal =
+  let filteredTotal =
     selectedId === null ? total : (counts.get(selectedId) ?? 0);
+  if (query) {
+    const [row] = await db.select({ n: count() }).from(articles).where(where);
+    filteredTotal = row.n;
+  }
   const totalPages = Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE));
   const rawPage = Array.isArray(params.page) ? params.page[0] : params.page;
   const requestedPage = Number.parseInt(rawPage ?? "1", 10);
@@ -101,12 +124,7 @@ async function DashboardContent({
   const list = await db
     .select()
     .from(articles)
-    .where(
-      and(
-        eq(articles.userId, userId),
-        selectedId !== null ? eq(articles.categoryId, selectedId) : undefined,
-      ),
-    )
+    .where(where)
     .orderBy(
       sql`${articles.publishedAt} desc nulls last`,
       desc(articles.createdAt),
@@ -127,12 +145,13 @@ async function DashboardContent({
   ];
 
   return (
-    <FilterProvider selectedId={selectedId}>
+    <FilterProvider selectedId={selectedId} query={query}>
+      <SearchBar />
       <CategoryBar items={items} />
 
       <PendingList>
         {list.length === 0 ? (
-          <EmptyState filtered={selectedId !== null} />
+          <EmptyState filtered={selectedId !== null} query={query} />
         ) : (
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -152,6 +171,7 @@ async function DashboardContent({
               page={page}
               totalPages={totalPages}
               categoryId={selectedId}
+              query={query}
             />
           </div>
         )}

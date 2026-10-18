@@ -4,10 +4,12 @@ type PaginationProps = {
   page: number;
   totalPages: number;
   categoryId: number | null;
+  query: string;
 };
 
-function hrefFor(page: number, categoryId: number | null) {
+function hrefFor(page: number, categoryId: number | null, query: string) {
   const params = new URLSearchParams();
+  if (query) params.set("q", query);
   if (categoryId !== null) params.set("category", String(categoryId));
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();
@@ -40,7 +42,12 @@ const active = "border-indigo-600 bg-indigo-600 text-white";
 const disabled =
   "cursor-not-allowed border-slate-200 bg-white text-slate-400 opacity-50 dark:border-slate-700 dark:bg-slate-900";
 
-export function Pagination({ page, totalPages, categoryId }: PaginationProps) {
+export function Pagination({
+  page,
+  totalPages,
+  categoryId,
+  query,
+}: PaginationProps) {
   if (totalPages <= 1) return null;
 
   return (
@@ -48,8 +55,8 @@ export function Pagination({ page, totalPages, categoryId }: PaginationProps) {
       aria-label="페이지 이동"
       className="flex flex-wrap items-center justify-center gap-2 pt-2"
     >
-      <NavButton label="처음" target={1} enabled={page > 1} categoryId={categoryId} />
-      <NavButton label="이전" target={page - 1} enabled={page > 1} categoryId={categoryId} />
+      <NavButton label="처음" target={1} enabled={page > 1} categoryId={categoryId} query={query} />
+      <NavButton label="이전" target={page - 1} enabled={page > 1} categoryId={categoryId} query={query} />
 
       {pageItems(page, totalPages).map((item, i) =>
         item === "gap" ? (
@@ -59,7 +66,7 @@ export function Pagination({ page, totalPages, categoryId }: PaginationProps) {
         ) : (
           <Link
             key={item}
-            href={hrefFor(item, categoryId)}
+            href={hrefFor(item, categoryId, query)}
             aria-label={`${item}페이지`}
             aria-current={item === page ? "page" : undefined}
             className={`${base} ${item === page ? active : idle}`}
@@ -69,8 +76,8 @@ export function Pagination({ page, totalPages, categoryId }: PaginationProps) {
         ),
       )}
 
-      <NavButton label="다음" target={page + 1} enabled={page < totalPages} categoryId={categoryId} />
-      <NavButton label="끝" target={totalPages} enabled={page < totalPages} categoryId={categoryId} />
+      <NavButton label="다음" target={page + 1} enabled={page < totalPages} categoryId={categoryId} query={query} />
+      <NavButton label="끝" target={totalPages} enabled={page < totalPages} categoryId={categoryId} query={query} />
     </nav>
   );
 }
@@ -80,11 +87,13 @@ function NavButton({
   target,
   enabled,
   categoryId,
+  query,
 }: {
   label: string;
   target: number;
   enabled: boolean;
   categoryId: number | null;
+  query: string;
 }) {
   if (!enabled) {
     return (
@@ -94,7 +103,7 @@ function NavButton({
     );
   }
   return (
-    <Link href={hrefFor(target, categoryId)} className={`${base} ${idle}`}>
+    <Link href={hrefFor(target, categoryId, query)} className={`${base} ${idle}`}>
       {label}
     </Link>
   );
