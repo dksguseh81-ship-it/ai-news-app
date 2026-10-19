@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard-filter";
 import { EmptyState } from "@/components/empty-state";
 import { FetchNewsButton } from "@/components/fetch-news-button";
+import { NewsCountBadge } from "@/components/news-count-badge";
 import { Pagination } from "@/components/pagination";
 import { NewsCard, NewsCardSkeleton } from "@/components/news-card";
 
@@ -23,18 +24,12 @@ const PAGE_SIZE = 9;
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
-export default function DashboardPage({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+export default function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-300">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">
-            AI 뉴스 수집기
-          </h1>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-slate-50">AI 뉴스 수집기</h1>
           <div className="flex items-center gap-3">
             <FetchNewsButton />
             <UserButton />
@@ -51,20 +46,12 @@ export default function DashboardPage({
   );
 }
 
-async function DashboardContent({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
+async function DashboardContent({ searchParams }: { searchParams: SearchParams }) {
   const { userId } = await auth.protect();
   const params = await searchParams;
 
   const [userCategories, countRows] = await Promise.all([
-    db
-      .select()
-      .from(categories)
-      .where(eq(categories.userId, userId))
-      .orderBy(categories.id),
+    db.select().from(categories).where(eq(categories.userId, userId)).orderBy(categories.id),
     db
       .select({ categoryId: articles.categoryId, n: count() })
       .from(articles)
@@ -72,20 +59,14 @@ async function DashboardContent({
       .groupBy(articles.categoryId),
   ]);
 
-  const counts = new Map<number | null, number>(
-    countRows.map((r) => [r.categoryId, r.n]),
-  );
+  const counts = new Map<number | null, number>(countRows.map((r) => [r.categoryId, r.n]));
   const total = countRows.reduce((sum, r) => sum + r.n, 0);
 
   // ?category=<id> — 본인 카테고리에 없는 값이면 "전체"로 처리
-  const raw = Array.isArray(params.category)
-    ? params.category[0]
-    : params.category;
+  const raw = Array.isArray(params.category) ? params.category[0] : params.category;
   const requestedId = raw ? Number(raw) : null;
   const selectedId =
-    requestedId !== null && userCategories.some((c) => c.id === requestedId)
-      ? requestedId
-      : null;
+    requestedId !== null && userCategories.some((c) => c.id === requestedId) ? requestedId : null;
 
   // ?q=<키워드> — 한국어 제목·요약과 원문 제목에서 대소문자 구분 없이 찾는다
   const rawQ = Array.isArray(params.q) ? params.q[0] : params.q;
@@ -106,8 +87,7 @@ async function DashboardContent({
   );
 
   // ?page=<n> — 범위를 벗어나거나 숫자가 아니면 가장 가까운 유효 페이지로 맞춘다
-  let filteredTotal =
-    selectedId === null ? total : (counts.get(selectedId) ?? 0);
+  let filteredTotal = selectedId === null ? total : (counts.get(selectedId) ?? 0);
   if (query) {
     const [row] = await db.select({ n: count() }).from(articles).where(where);
     filteredTotal = row.n;
@@ -115,10 +95,7 @@ async function DashboardContent({
   const totalPages = Math.max(1, Math.ceil(filteredTotal / PAGE_SIZE));
   const rawPage = Array.isArray(params.page) ? params.page[0] : params.page;
   const requestedPage = Number.parseInt(rawPage ?? "1", 10);
-  const page = Math.min(
-    Math.max(Number.isNaN(requestedPage) ? 1 : requestedPage, 1),
-    totalPages,
-  );
+  const page = Math.min(Math.max(Number.isNaN(requestedPage) ? 1 : requestedPage, 1), totalPages);
 
   // 최신순: 발행일 내림차순(발행일 없는 기사는 뒤로), 같으면 수집 시각 내림차순
   const list = await db
@@ -146,6 +123,9 @@ async function DashboardContent({
 
   return (
     <FilterProvider selectedId={selectedId} query={query}>
+      <div>
+        <NewsCountBadge total={total} />
+      </div>
       <SearchBar />
       <CategoryBar items={items} />
 
@@ -160,19 +140,12 @@ async function DashboardContent({
                   key={article.id}
                   article={article}
                   categoryName={
-                    (article.categoryId &&
-                      categoryNames.get(article.categoryId)) ||
-                    "기타"
+                    (article.categoryId && categoryNames.get(article.categoryId)) || "기타"
                   }
                 />
               ))}
             </div>
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              categoryId={selectedId}
-              query={query}
-            />
+            <Pagination page={page} totalPages={totalPages} categoryId={selectedId} query={query} />
           </div>
         )}
       </PendingList>
