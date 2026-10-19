@@ -1,4 +1,5 @@
 import type { Article } from "@/db/schema";
+import { DeleteArticleButton } from "@/components/delete-article-button";
 import { SaveToNotionButton } from "@/components/save-to-notion-button";
 
 type NewsCardProps = {
@@ -27,8 +28,9 @@ export function NewsCard({ article, categoryName }: NewsCardProps) {
   const published = formatDate(article.publishedAt);
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center justify-between gap-2">
+    <article className="relative flex h-full flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+      <DeleteArticleButton articleId={article.id} />
+      <div className="flex items-center justify-between gap-2 pr-7">
         <span className="min-w-0 truncate rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
           {categoryName}
         </span>
