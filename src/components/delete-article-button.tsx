@@ -33,14 +33,20 @@ export function DeleteArticleButton({ articleId }: { articleId: number }) {
       aria-busy={pending}
       aria-label={failed ? "삭제 실패 · 다시 시도" : "뉴스 삭제"}
       title={failed ? "삭제 실패 · 다시 시도" : "삭제"}
-      className={`absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 ${
+      // 데스크톱에서는 카드에 hover/포커스가 있을 때만 드러내 시선을 방해하지 않는다. 터치 기기(좁은 화면)는 항상 보인다.
+      className={`absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full transition sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100 focus-visible:opacity-100 disabled:sm:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 ${
         failed
           ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-800"
           : "text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
       }`}
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none">
-        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path
+          d="M6 6l12 12M18 6L6 18"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
       </svg>
     </button>
   );
